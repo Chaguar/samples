@@ -2,35 +2,35 @@
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Token SDK Sample
+# Panurus Token Sample
 
-The **Token SDK Sample** demonstrates how to:
+The **Panurus Token Sample** demonstrates how to:
 
-- Build a simple token-based application using the [Token SDK](https://github.com/LFDT-Panurus/panurus).
-- Connect the application to both [Fabric-X](https://github.com/hyperledger/fabric-x) and classic [Fabric](https://github.com/hyperledger/fabric) networks.
+- Build a simple token-based application using [Panurus](https://github.com/LFDT-Panurus/panurus).
+- Connect the application to both [Chaguar](https://github.com/Chaguar/chaguar) and classic [Fabric](https://github.com/hyperledger/fabric) networks.
 - Issue, transfer, redeem and lock (HTLC) tokens via a REST API.
 
 ## Table of Contents
 
-- [Token SDK Sample](#token-sdk-sample)
+- [Panurus Token Sample](#panurus-token-sample)
   - [Table of Contents](#table-of-contents)
   - [About the Sample](#about-the-sample)
     - [Components](#components)
       - [Application services](#application-services)
-      - [Fabric(x) Blockchain Network](#fabricx-blockchain-network)
+      - [Fabric and Chaguar Blockchain Network](#fabric-and-chaguar-blockchain-network)
     - [Application](#application)
     - [UTXO Model](#utxo-model)
     - [Deep Dive: What Happens During a Transfer?](#deep-dive-what-happens-during-a-transfer)
   - [Running the sample](#running-the-sample)
   - [Prerequisites](#prerequisites)
-  - [Default option: Fabric-X with Ansible](#default-option-fabric-x-with-ansible)
+  - [Default option: Chaguar with Ansible](#default-option-chaguar-with-ansible)
     - [Requirements](#requirements)
     - [Installation](#installation)
-    - [Setup Fabric-X](#setup-fabric-x)
-  - [Option 2: Fabric-X devnet](#option-2-fabric-x-devnet)
+    - [Setup Chaguar](#setup-chaguar)
+  - [Option 2: Chaguar devnet](#option-2-chaguar-devnet)
   - [Option 3: Fabric v3](#option-3-fabric-v3)
   - [Option 4: Fabric v3 + EVM (cross-chain swap)](#option-4-fabric-v3--evm-cross-chain-swap)
-  - [Option 5: Fabric-X devnet + EVM (cross-chain swap)](#option-5-fabric-x-devnet--evm-cross-chain-swap)
+  - [Option 5: Chaguar devnet + EVM (cross-chain swap)](#option-5-chaguar-devnet--evm-cross-chain-swap)
   - [Interacting with the Application](#interacting-with-the-application)
   - [Example: Issue tokens](#example-issue-tokens)
   - [Example: Transfer tokens](#example-transfer-tokens)
@@ -46,17 +46,17 @@ The **Token SDK Sample** demonstrates how to:
 
 ## About the Sample
 
-This demo provides a set of services exposing REST APIs that integrate with the [Token SDK](https://github.com/LFDT-Panurus/panurus)
-to issue, transfer, and redeem tokens backed by a **Hyperledger Fabric(x)** network for validation and settlement.
+This demo provides a set of services exposing REST APIs that integrate with [Panurus](https://github.com/LFDT-Panurus/panurus)
+to issue, transfer, and redeem tokens backed by a **Hyperledger Fabric or Chaguar** network for validation and settlement.
 
 Together, these services form a _Layer 2 network_ capable of transacting privately among participants.
 The ledger data does not reveal balances, transaction amounts, or participant identities.
 Tokens are represented as UTXOs owned by pseudonymous keys, with details hidden through **Zero-Knowledge Proofs (ZKPs)**.
 
-The application follows the Fabric-X programming model, where business parties directly endorse transactions—rather than Fabric peers executing chaincode.
-Note that the [Token SDK](https://github.com/LFDT-Panurus/panurus) builds on top of the [Fabric Smart Client (FSC)](https://github.com/hyperledger-labs/fabric-smart-client), a framework to build distributed applications for Fabric(x).
+The application follows the Chaguar programming model, where business parties directly endorse transactions—rather than Fabric peers executing chaincode.
+Note that [Panurus](https://github.com/LFDT-Panurus/panurus) builds on top of the [Fabric Smart Client (FSC)](https://github.com/hyperledger-labs/fabric-smart-client), a framework to build distributed applications for Fabric and Chaguar.
 
-This sample helps you get familiar with Token SDK features and serves as a starting point for your own proof of concept.
+This sample helps you get familiar with Panurus features and serves as a starting point for your own proof of concept.
 
 ### Components
 
@@ -66,15 +66,15 @@ This sample helps you get familiar with Token SDK features and serves as a start
 - **Owner services** - host user wallets.
 - **Endorser service** - validates and approves token transactions.
 
-#### Fabric(x) Blockchain Network
+#### Fabric and Chaguar Blockchain Network
 
 - An offline Certificate Authority (CA).
-- Configuration for a **Fabric-X** test network.
+- Configuration for a **Chaguar** test network.
 - Configuration for a **Fabric v3** test network.
 
 Below is a high level overview of the components and how data flows in a token transfer transaction.
 The sequence diagram later in this readme provides more details about the token transaction.
-For a specification of the Fabric-X components and their interactions, refer to the main [README.md](../../README.md).
+For a specification of the Chaguar components and their interactions, refer to the [Chaguar README](https://github.com/Chaguar/chaguar#architecture-overview).
 
 ![transfer: high level](./diagrams/components.png)
 
@@ -86,10 +86,10 @@ Each node runs as a separate application with:
 
 - A REST API
 - The FSC node runtime
-- The Token SDK
+- The Panurus
 
 Nodes communicate via _websockets_ to construct token transactions.
-Each node also acts as a Fabric user, submitting transactions to the settlement layer — any Fabric or Fabric-X network.
+Each node also acts as a Fabric user, submitting transactions to the settlement layer — any Fabric or Chaguar network.
 
 A namespace (`token_namespace`) is deployed, along with a committed transaction containing the identities of the issuer, endorsers, and CA, enabling transaction validation.
 
@@ -105,7 +105,7 @@ Note that the application uses the UTXO model (like bitcoin).
 
 Every transfer consumes existing outputs and creates new ones, ensuring balance consistency.
 
-The Token SDK exposes all transactions, including "change" (the remainder returned to the sender).
+Panurus exposes all transactions, including "change" (the remainder returned to the sender).
 
 ### Deep Dive: What Happens During a Transfer?
 
@@ -124,7 +124,7 @@ Let’s examine how a private token transfer works between `alice` (Owner 1) and
 
 3. **Commit Transaction:**
 
-   Alice submits the endorsed fabric(x) transaction to the ordering service.
+   Alice submits the endorsed Fabric or Chaguar transaction to the ordering service.
    Once committed, all involved nodes (Owner 1, Owner 2) receive events and update the transaction status to `Confirmed.`
    The transaction is now final; Dan now officially owns the `100 TOK`.
 
@@ -136,7 +136,7 @@ Let’s examine how a private token transfer works between `alice` (Owner 1) and
 
 You will need docker or podman to run the fabric network and application.
 
-With the following command, we will download the Fabric 3 binaries, docker images and samples. For fabric-x based networks, we only use the Fabric CA for issuing idemix credentials for the accounts. If you want to run the same application against Fabric 3, this will provide you with the necessary prerequisites for that too.
+With the following command, we will download the Fabric 3 binaries, docker images and samples. For Chaguar networks, we only use the Fabric CA for issuing idemix credentials for the accounts. If you want to run the same application against Fabric 3, this will provide you with the necessary prerequisites for that too.
 
 ```shell
 make install-prerequisites
@@ -148,7 +148,7 @@ Make sure the CA binaries are accessible in your $PATH (add it to your .bashrc o
 export PATH="$PATH:$(pwd)/fabric-samples/bin"
 ```
 
-## Default option: Fabric-X with Ansible
+## Default option: Chaguar with Ansible
 
 Use ansible scripts to deploy real distributed networks. For the sake of this sample, we included a simple network that runs on your laptop, but there is a wealth of options to deploy to separate VMs with ease. Checkout the [Fabric-x Ansible Collection](https://github.com/LF-Decentralized-Trust-labs/fabric-x-ansible-collection?tab=readme-ov-file#option-2-install-from-source) to learn more.
 
@@ -165,7 +165,7 @@ Use ansible scripts to deploy real distributed networks. For the sake of this sa
 make install-prerequisites
 ```
 
-### Setup Fabric-X
+### Setup Chaguar
 
 Let the scripts know you want to use ansible (not strictly necessary as this is the default).
 Then generate the crypto material.
@@ -184,7 +184,7 @@ This creates:
   - endorser identity
 - Fabric Smart Client
   - identities for the nodes (issuer, owner1, owner2, endorser)
-- Fabric Token SDK
+- Panurus
   - an idemix issuer for the token accounts
   - idemix credentials signed by this issuer
   - cryptographic parameters and configuration for the token network (see [Public parameters (tokengen)](#public-parameters-tokengen))
@@ -199,9 +199,9 @@ make start
 curl -X POST http://localhost:9300/endorser/init
 ```
 
-## Option 2: Fabric-X devnet
+## Option 2: Chaguar devnet
 
-Runs the sample against [devnet](../devnet), the local Fabric-X network in this repository
+Runs the sample against [devnet](../devnet), the local Chaguar network in this repository
 (a 4-party Arma orderer and a committer, all in docker). `make` drives devnet for you; there's
 nothing to start separately. First make sure that the crypto from the ansible network is cleared.
 
@@ -249,7 +249,7 @@ This option runs the same Fabric v3 network as Option 3, alongside a standalone,
 wallet on both and can trade across them with an HTLC - see
 [Example: HTLC swap between Fabric and EVM](#example-htlc-swap-between-fabric-and-evm). It is a
 second, independent chain for the sample to demonstrate a real cross-chain swap, not the
-[`evm/`](../evm) Fabric-X-to-EVM gateway sample elsewhere in this repository.
+[`evm/`](../evm) Chaguar-to-EVM gateway sample elsewhere in this repository.
 
 You'll additionally need the [Foundry](https://book.getfoundry.sh/getting-started/installation)
 toolchain (`forge`, `cast`) on your `$PATH` to build and deploy the contracts; anvil itself runs
@@ -275,11 +275,11 @@ make start
 `make start` prints the deployed `TokenState` and `EndorsementVerifier` contract addresses once the
 EVM leg is ready. `docker logs anvil` shows the chain's log; `make teardown` stops it.
 
-## Option 5: Fabric-X devnet + EVM (cross-chain swap)
+## Option 5: Chaguar devnet + EVM (cross-chain swap)
 
-The Fabric-X counterpart of Option 4: the same [devnet](../devnet) network as Option 2, alongside
-the same anvil chain, so `alice` and `dan` can swap tokens between **Fabric-X** and EVM. The nodes
-are built with both the Fabric-X and the EVM network drivers, and their configuration
+The Chaguar counterpart of Option 4: the same [devnet](../devnet) network as Option 2, alongside
+the same anvil chain, so `alice` and `dan` can swap tokens between **Chaguar** and EVM. The nodes
+are built with both the Chaguar and the EVM network drivers, and their configuration
 (`conf-xevm/`) is Option 2's plus the `evmtms` from Option 4. Only `endorser1` runs on devnet, so
 the EVM leg requires a single endorsement (`EVM_THRESHOLD=1`).
 
@@ -322,7 +322,7 @@ Now let's issue and transfer some tokens!
 We begin with initializing the token namespace (commit the parameters for the network) and issue `TOK` tokens to `alice`.
 
 ```bash
-curl -X POST http://localhost:9300/endorser/init  # Fabric-X only
+curl -X POST http://localhost:9300/endorser/init  # Chaguar only
 
 curl http://localhost:9100/issuer/issue -d '{
     "amount": {"code": "TOK","value": 1000},
@@ -357,7 +357,7 @@ It is the building block for atomic swaps between parties that do not trust each
 
 Hashes and pre-images are exchanged as standard base64 strings. `deadline` is the number of seconds from now.
 On a node with more than one token management service you can select one with an optional
-`"tmsId": {"network": "default", "channel": "mychannel", "namespace": "token_namespace"}` (the channel is `arma` on Fabric-X).
+`"tmsId": {"network": "default", "channel": "mychannel", "namespace": "token_namespace"}` (the channel is `arma` on Chaguar).
 
 `alice` locks `20 TOK` for `dan` for one hour. The node generates the pre-image and returns it with its SHA-256 hash;
 `alice` passes the pre-image to `dan` out of band. `dan` then claims the tokens:
@@ -398,8 +398,8 @@ HASH=$(printf '%s' "$SECRET" | openssl base64 -d -A | openssl dgst -sha256 -bina
 ## Example: HTLC swap between Fabric and EVM
 
 On [Option 4](#option-4-fabric-v3--evm-cross-chain-swap) (Fabric v3) and
-[Option 5](#option-5-fabric-x-devnet--evm-cross-chain-swap) (Fabric-X), `owner1` and `owner2` each declare a
-second token management service, `evmtms`, settled on the anvil chain rather than Fabric(-X). `alice`
+[Option 5](#option-5-chaguar-devnet--evm-cross-chain-swap) (Chaguar), `owner1` and `owner2` each declare a
+second token management service, `evmtms`, settled on the anvil chain rather than Fabric or Chaguar. `alice`
 and `dan` hold a wallet on both, so they can swap `TOK` (Fabric) for `ETOK` (EVM) atomically with
 the same HTLC primitive, just by passing an explicit `tmsId` on each call: `alice` locks on Fabric,
 `dan` locks on EVM, and each claims the other's lock by revealing the same pre-image. The full
@@ -490,7 +490,7 @@ go tool tokengen gen zkatdlognogh.v1 --issuers conf/issuer/keys/wallet/iss --ide
 
 writing the public parameters to `namespace/zkatdlognoghv1_pp.json` under the platform's config root
 (`CONF_ROOT`, set in each platform's `.mk` file; `conf/` for `PLATFORM=fabricx`, as in the commands
-here). On Fabric-X, `POST /endorser/init` commits this file to the ledger.
+here). On Chaguar, `POST /endorser/init` commits this file to the ledger.
 
 For `PLATFORM=fabric3`, the same file is instead baked into the chaincode image
 (`conf-f3/namespace/Dockerfile`), so the on-chain validator and the off-chain app always agree.
@@ -502,7 +502,7 @@ go tool tokengen pp print -i conf/namespace/zkatdlognoghv1_pp.json
 ```
 
 You'd regenerate by hand (`make clean` then `make setup`, or re-run the command above directly) after
-changing the driver version in a way that changes the public-parameters format — a Token SDK dependency
+changing the driver version in a way that changes the public-parameters format — a Panurus dependency
 bump is the main case; check the new version's release notes if transactions start failing validation
 after a bump with no other code change.
 
