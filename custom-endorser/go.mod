@@ -5,7 +5,7 @@
 
 module github.com/hyperledger/fabric-x-samples/custom-endorser
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/hyperledger/fabric-lib-go v1.1.5
