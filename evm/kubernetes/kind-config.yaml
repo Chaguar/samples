@@ -1,0 +1,20 @@
+# Single-node kind cluster that publishes the NodePorts used by the
+# control node (orderer routers, committer sidecar/query-service, EVM gateway)
+# on the host's localhost.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30050, hostPort: 30050 }
+      - { containerPort: 30150, hostPort: 30150 }
+      - { containerPort: 30250, hostPort: 30250 }
+      - { containerPort: 30350, hostPort: 30350 }
+      - { containerPort: 30560, hostPort: 30560 }
+      - { containerPort: 30580, hostPort: 30580 }
+      - { containerPort: 30545, hostPort: 30545 }
+      # EVM gateway on the standard Ethereum RPC port
+      - { containerPort: 30545, hostPort: 8545 }
+      # Block explorer UI. Only in use when the chaguar_block_explorer group in
+      # inventory.yaml is enabled.
+      - { containerPort: 30690, hostPort: 30690 }
