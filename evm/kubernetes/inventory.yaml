@@ -1,0 +1,266 @@
+# Minimal Chaguar network with the EVM gateway on Kubernetes:
+# 4 orderer groups, 1 committer (with PostgreSQL) and the EVM gateway.
+# Crypto material is generated with cryptogen (no Fabric CA); no monitoring
+# or load generator. The block explorer is optional (commented out below).
+all:
+  vars:
+    # Run everything from this machine against the current kubectl context.
+    ansible_connection: local
+    # Use the Python that runs ansible (it has the kubernetes library).
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    ansible_host: "{{ inventory_hostname }}.default.svc.cluster.local"
+    # Address the control node (and tool containers) use to reach NodePorts.
+    # On macOS the tool containers run in a VM, where localhost is not the Mac,
+    # so default to host.docker.internal there. Override with K8S_NODE_IP.
+    actual_host: >-
+      {{
+        lookup('env', 'K8S_NODE_IP')
+        or ('host.docker.internal' if lookup('pipe', 'uname -s') == 'Darwin' else 'localhost')
+      }}
+    # All generated files go to ./out in the directory you run ansible from
+    # (override with OUT_DIR).
+    out_dir: "{{ lookup('env', 'OUT_DIR') or (lookup('env', 'PWD') ~ '/out') }}"
+    control_node_dir: "{{ out_dir }}/control-node"
+    cli_bin_dir: "{{ control_node_dir }}/cli"
+    fetched_artifacts_dir: "{{ control_node_dir }}/fetched"
+    config_build_dir: "{{ control_node_dir }}/config"
+    cryptogen_artifacts_dir: "{{ config_build_dir }}/cryptogen-artifacts"
+    armageddon_artifacts_dir: "{{ config_build_dir }}/armageddon-artifacts"
+    configtxgen_artifacts_dir: "{{ config_build_dir }}/configtxgen-artifacts"
+    remote_deploy_dir: "{{ out_dir }}/k8s-deployment"
+    remote_node_dir: "{{ remote_deploy_dir }}/{{ inventory_hostname }}"
+    remote_config_dir: "{{ remote_node_dir }}/config"
+    remote_data_dir: "{{ remote_node_dir }}/data"
+    k8s_storage_size: 500Mi
+    channel_id: arma
+
+    organizations:
+      orderer_org_1: &OrdererOrg1
+        name: OrdererOrg1
+        domain: ordererorg1.example.com
+      orderer_org_2: &OrdererOrg2
+        name: OrdererOrg2
+        domain: ordererorg2.example.com
+      orderer_org_3: &OrdererOrg3
+        name: OrdererOrg3
+        domain: ordererorg3.example.com
+      orderer_org_4: &OrdererOrg4
+        name: OrdererOrg4
+        domain: ordererorg4.example.com
+      org1: &Org1
+        name: Org1
+        domain: org1.example.com
+
+  children:
+    network:
+      children:
+        chaguar:
+          children:
+            chaguar_orderers:
+              vars:
+                orderer_use_k8s: true
+                orderer_use_tls: true
+                orderer_use_mtls: true
+              children:
+                chaguar_orderer_1:
+                  vars:
+                    organization: &OrdererOrg1Node
+                      <<: *OrdererOrg1
+                      role: orderer
+                    orderer_group: 1
+                  hosts:
+                    orderer-router-1:
+                      orderer_component_type: router
+                      orderer_rpc_port: 7050
+                      orderer_operations_port: 7060
+                      orderer_k8s_rpc_node_port: 30050
+                    orderer-consenter-1:
+                      organization:
+                        <<: *OrdererOrg1Node
+                        user:
+                          name: ordererorg1-admin
+                          type: admin
+                      orderer_component_type: consensus
+                      orderer_rpc_port: 7051
+                      orderer_operations_port: 7061
+                    orderer-assembler-1:
+                      orderer_component_type: assembler
+                      orderer_rpc_port: 7052
+                      orderer_operations_port: 7062
+                    orderer-batcher-1:
+                      orderer_component_type: batcher
+                      orderer_shard_id: 1
+                      orderer_rpc_port: 7053
+                      orderer_operations_port: 7063
+                chaguar_orderer_2:
+                  vars:
+                    organization: &OrdererOrg2Node
+                      <<: *OrdererOrg2
+                      role: orderer
+                    orderer_group: 2
+                  hosts:
+                    orderer-router-2:
+                      orderer_component_type: router
+                      orderer_rpc_port: 7150
+                      orderer_operations_port: 7160
+                      orderer_k8s_rpc_node_port: 30150
+                    orderer-consenter-2:
+                      organization:
+                        <<: *OrdererOrg2Node
+                        user:
+                          name: ordererorg2-admin
+                          type: admin
+                      orderer_component_type: consensus
+                      orderer_rpc_port: 7151
+                      orderer_operations_port: 7161
+                    orderer-assembler-2:
+                      orderer_component_type: assembler
+                      orderer_rpc_port: 7152
+                      orderer_operations_port: 7162
+                    orderer-batcher-2:
+                      orderer_component_type: batcher
+                      orderer_shard_id: 1
+                      orderer_rpc_port: 7153
+                      orderer_operations_port: 7163
+                chaguar_orderer_3:
+                  vars:
+                    organization: &OrdererOrg3Node
+                      <<: *OrdererOrg3
+                      role: orderer
+                    orderer_group: 3
+                  hosts:
+                    orderer-router-3:
+                      orderer_component_type: router
+                      orderer_rpc_port: 7250
+                      orderer_operations_port: 7260
+                      orderer_k8s_rpc_node_port: 30250
+                    orderer-consenter-3:
+                      organization:
+                        <<: *OrdererOrg3Node
+                        user:
+                          name: ordererorg3-admin
+                          type: admin
+                      orderer_component_type: consensus
+                      orderer_rpc_port: 7251
+                      orderer_operations_port: 7261
+                    orderer-assembler-3:
+                      orderer_component_type: assembler
+                      orderer_rpc_port: 7252
+                      orderer_operations_port: 7262
+                    orderer-batcher-3:
+                      orderer_component_type: batcher
+                      orderer_shard_id: 1
+                      orderer_rpc_port: 7253
+                      orderer_operations_port: 7263
+                chaguar_orderer_4:
+                  vars:
+                    organization: &OrdererOrg4Node
+                      <<: *OrdererOrg4
+                      role: orderer
+                    orderer_group: 4
+                  hosts:
+                    orderer-router-4:
+                      orderer_component_type: router
+                      orderer_rpc_port: 7350
+                      orderer_operations_port: 7360
+                      orderer_k8s_rpc_node_port: 30350
+                    orderer-consenter-4:
+                      organization:
+                        <<: *OrdererOrg4Node
+                        user:
+                          name: ordererorg4-admin
+                          type: admin
+                      orderer_component_type: consensus
+                      orderer_rpc_port: 7351
+                      orderer_operations_port: 7361
+                    orderer-assembler-4:
+                      orderer_component_type: assembler
+                      orderer_rpc_port: 7352
+                      orderer_operations_port: 7362
+                    orderer-batcher-4:
+                      orderer_component_type: batcher
+                      orderer_shard_id: 1
+                      orderer_rpc_port: 7353
+                      orderer_operations_port: 7363
+
+            chaguar_committers:
+              children:
+                chaguar_committer:
+                  vars:
+                    committer_use_k8s: true
+                    committer_use_tls: true
+                    committer_use_mtls: true
+                    organization:
+                      <<: *Org1
+                      role: peer
+                  hosts:
+                    committer-db:
+                      postgres_user: sc_user
+                      postgres_password: sc_secret_pwd
+                      postgres_db: sc_db
+                      postgres_port: 5150
+                      postgres_use_k8s: true
+                      postgres_use_tls: true
+                    committer-validator:
+                      committer_component_type: validator
+                      committer_rpc_port: 5100
+                      committer_metrics_port: 5200
+                      postgres_db_host: committer-db
+                    committer-verifier:
+                      committer_component_type: verifier
+                      committer_rpc_port: 5110
+                      committer_metrics_port: 5210
+                    committer-coordinator:
+                      committer_component_type: coordinator
+                      committer_rpc_port: 5120
+                      committer_metrics_port: 5220
+                    committer-sidecar:
+                      committer_component_type: sidecar
+                      committer_rpc_port: 5130
+                      committer_metrics_port: 5230
+                      committer_k8s_rpc_node_port: 30560
+                    committer-query-service:
+                      committer_component_type: query-service
+                      committer_rpc_port: 5140
+                      committer_metrics_port: 5240
+                      committer_k8s_rpc_node_port: 30580
+                      postgres_db_host: committer-db
+
+            # Block explorer for the raw Chaguar blocks, at http://localhost:30690.
+            # To enable it, uncomment this group and run the deploy playbook again.
+            # chaguar_block_explorer:
+            #   hosts:
+            #     block-explorer-db:
+            #       postgres_user: block_explorer_user
+            #       postgres_password: block_explorer_pwd
+            #       postgres_db: explorer
+            #       postgres_port: 18432
+            #       postgres_use_k8s: true
+            #       postgres_use_tls: true
+            #     block-explorer:
+            #       block_explorer_use_k8s: true
+            #       block_explorer_port: 18080
+            #       block_explorer_ui_port: 18000
+            #       block_explorer_ui_k8s_node_port: 30690
+            #       sidecar_host: committer-sidecar
+            #       postgres_db_host: block-explorer-db
+            #       # cert for mTLS
+            #       organization:
+            #         <<: *Org1
+            #         role: peer
+
+        chaguar_evm:
+          hosts:
+            chaguar-evm:
+              evm_use_k8s: true
+              evm_use_tls: true
+              evm_port: 8545
+              evm_k8s_node_port: 30545
+              organization:
+                <<: *Org1
+                role: peer
+                user:
+                  name: chaguar-evm-client
+                namespaces:
+                  - id: basic
+                    policy: threshold

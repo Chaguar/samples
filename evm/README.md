@@ -39,6 +39,12 @@ make start    # start the network + Blockscout explorer
 
 To run without the block explorer use `make start-node` instead.
 
+> [!NOTE]
+> Prefer Kubernetes? [kubernetes/](kubernetes/) deploys a Chaguar network and
+> the EVM gateway to a local kind cluster with Ansible, also on
+> `localhost:8545`. You can run the token demo below against it (without
+> Blockscout). Uses the [Chaguar Ansible Collection](https://chaguar.github.io/ansible-collection/).
+
 Verify the RPC is live:
 
 ```shell
@@ -194,3 +200,5 @@ Pass `DOCKER=podman COMPOSE="podman compose"` to any `make` target:
 ```shell
 make start DOCKER=podman COMPOSE="podman compose"
 ```
+
+To run on Kubernetes instead of Docker Compose, see [kubernetes/](kubernetes/).
